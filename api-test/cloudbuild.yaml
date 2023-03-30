@@ -1,0 +1,22 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: 
+    - 'build'
+    - '-t'
+    - '$_GCR_HOSTNAME/$PROJECT_ID/$_REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA'
+    - './api-test' 
+
+- name: 'gcr.io/cloud-builders/docker'
+  args: 
+    - "run"
+    - "--volume"
+    - "/workspace:/workspace"
+    - "$_GCR_HOSTNAME/$PROJECT_ID/$_REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA"
+
+- name: 'gcr.io/cloud-builders/gsutil'
+  entrypoint: 'bash'
+  args: 
+    - '-c'
+    - |
+      gsutil -m cp -r /workspace/target $_REPORT_PATH/$(date +%Y%m%d%H%M)
+      if [ $(cat /workspace/target/result.tmp) -gt 0 ];then exit 1; fi  
